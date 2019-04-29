@@ -1,0 +1,27 @@
+{
+  "name": "ddns-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.16.0",
+    "eslint-config-enough": "^0.3.4",
+    "eslint-loader": "^2.1.2"
+  },
+  "eslintConfig":{
+    "extends":"enough",
+    "env":{
+      "browser":true,
+      "node":true
+    },
+    "rules": {
+      "semi": [2, "always"]
+    }
+  }
+}
