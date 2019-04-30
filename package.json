@@ -40,7 +40,9 @@
       ]
     }
   },
-  "bable":{
-    "presets":["env"]
+  "bable": {
+    "presets": [
+      "env"
+    ]
   }
 }
