@@ -1,14 +1,19 @@
+/* eslint-disable no-console */
 const { resolve } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const history = require('connect-history-api-fallback');
 const convert = require('koa-connect');
 
 // 检测当前是否在开发环境中
-const dev = Boolean(process.env.WEPACK_SERVE);
+const dev = Boolean(process.env.WEBPACK_SERVE);
 
+console.log(process.env.WEBPACK_SERVE);
+console.log(process.env);
 module.exports = {
   mode: dev ? 'development' : 'production',
   entry: './src/index.js',
+  // 配置source map
+  devtool: dev ? 'cheap-module-eval-source-map' : 'hidden-source-map',
   // 打包
   output: {
     path: resolve(__dirname, 'dist'),
@@ -29,7 +34,7 @@ module.exports = {
         use: 'html-loader'
       },
       {
-        test: /\.CSS$/,
+        test: /\.css$/,
         use: ['style-loader', 'css-loader']
       },
       {

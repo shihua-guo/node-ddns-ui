@@ -1,1 +1,3 @@
-import router from "./router";
+import router from './router';
+// 启动 router
+router.start();
