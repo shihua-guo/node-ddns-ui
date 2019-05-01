@@ -8,5 +8,10 @@ export default class {
     container.querySelector('.foo__gobar').addEventListener('click', () => {
       router.go('/bar');
     });
+    // container.querySelector('pre').textContent = `
+    //   DEBUG: ${DEBUG}
+    //   VERSION: ${VERSION}
+    //   CONFIG: ${JSON.stringify(CONFIG)}
+    // `;
   }
 }

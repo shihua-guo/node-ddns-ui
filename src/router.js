@@ -1,9 +1,11 @@
-import foo from './views/foo';
-import bar from './views/bar';
+import 'regenerator-runtime/runtime';
 const routes = {
-  '/foo': foo,
-  '/bar': bar
+  '/foo': () => import('./views/foo'),
+  '/bar': () => import('./views/bar')
 };
+/**
+ * webpack 可以使用异步加载模块。这里使用async 和 await 实现
+ */
 class Router {
   start() {
     window.addEventListener('popstate', () => {
@@ -15,11 +17,10 @@ class Router {
     history.pushState({}, '', path);
     this.load(path);
   }
-  load(path) {
-    if (path === '/') {
-      path = '/foo';
-    }
-    const view = new routes[path]();
+  async load(path) {
+    if (path === '/')path = '/foo';
+    const View = (await routes[path]()).default;
+    const view = new View();
     view.mount(document.body);
   }
 }

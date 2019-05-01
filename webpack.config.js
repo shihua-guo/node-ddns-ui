@@ -1,23 +1,28 @@
-/* eslint-disable no-console */
 const { resolve } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const history = require('connect-history-api-fallback');
 const convert = require('koa-connect');
-
+const webpack = require('webpack');
+const internalIp = require('internal-ip');
+const url = require('url');
+const config = require('./config/' + (process.env.npm_config_config || 'default'));
+const pkgInfo = require('./package.json');
 // 检测当前是否在开发环境中
 const dev = Boolean(process.env.WEBPACK_SERVE);
 
-console.log(process.env.WEBPACK_SERVE);
-console.log(process.env);
 module.exports = {
   mode: dev ? 'development' : 'production',
-  entry: './src/index.js',
+  entry: {
+    main: ['./src/index.js']
+  },
   // 配置source map
   devtool: dev ? 'cheap-module-eval-source-map' : 'hidden-source-map',
   // 打包
   output: {
     path: resolve(__dirname, 'dist'),
-    filename: 'index.js'
+    filename: dev ? '[name].js' : '[chunkhash].js', // entry也需要添加hash只有生产的时候才添加hash
+    chunkFilename: '[chunkhash].js',
+    publicPath: config.publicPath
   },
   module: {
     // 配置loader
@@ -25,17 +30,39 @@ module.exports = {
       {
         test: /\.js$/,
         // 排除文件
-        exclude: /node_modules/,
+        exclude: /(node_modules|disposables)/,
         // 执行顺序
         use: ['babel-loader', 'eslint-loader']
       },
       {
         test: /\.html$/,
-        use: 'html-loader'
+        use: [
+          {
+            loader: 'html-loader',
+            options: {
+              // 默认值img：src，意思会默认打包<img>标签的图片
+              // 再加上<link> 标签的href 属性，用来打包入口index.html引入的favicon文件
+              attrs: ['img:src', 'link:href'],
+              root: resolve(__dirname, 'src')
+            }
+          }
+        ]
+      },
+      {
+        test: /favicon\.png/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              // name 制定文件输出名，[hash]为源文件的hash值，[ext]为后缀
+              name: '[hash].[ext]'
+            }
+          }
+        ]
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader', 'postcss-loader']
       },
       {
         /*
@@ -44,7 +71,8 @@ module.exports = {
         css-loader 引用的图片和字体同样会匹配到这里的 test 条件
         */
         test: /\.(png|jpg|jpeg|gif|eot|ttf|woff|woff2|svg|svgz)(\?.+)?$/,
-
+        // 同时添加exclude favicon的参数
+        exclude: /favicon\.png/,
         /*
         使用 url-loader, 它接受一个 limit 参数，单位为字节(byte)
 
@@ -76,14 +104,48 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       chunksSortMode: 'none'
+    }),
+    new webpack.HashedModuleIdsPlugin(),
+    new webpack.DefinePlugin({
+      DEBUG: dev,
+      VERSION: JSON.stringify(pkgInfo.version),
+      CONFIG: JSON.stringify(config.runtimeConfig)
     })
-  ]
+  ],
+  optimization: {
+    runtimeChunk: true,
+    splitChunks: {
+      chunks: 'all'
+    }
+  },
+  performance: {
+    hints: dev ? false : 'warning'
+  },
+  resolve: {
+    alias: {
+      '~': resolve(__dirname, 'src')
+    }
+  }
 };
 if (dev) {
   module.exports.serve = {
-    port: 8080,
+    host: '0.0.0.0',
+    port: config.serve.port,
+    hot: {
+      host: {
+        client: internalIp.v4.sync(),
+        server: '0.0.0.0'
+      }
+    },
+    dev: {
+      publicPath: config.publicPath
+    },
     add: app => {
-      app.use(convert(history()));
+      app.use(convert(history({
+        index: url.parse(config.publicPath).pathname,
+        disableDotRule: true,
+        htmlAcceptHeaders: ['text/html', 'application/xhtml+xml']
+      })));
     }
   };
 }
